@@ -5,8 +5,11 @@ import sys
 import cv2
 import numpy as np
 
+MODE = "desktop"
+
 class RollingShutter:
-    def __init__(self, direction, num_sections, windowname="rs"):
+    def __init__(self, direction, num_sections, controller, windowname="rs"):
+        self.controller = controller
         self.direction = None
         self.textdirection = None
         self.set_direction(direction)
@@ -56,11 +59,12 @@ class RollingShutter:
             image = self.history[0][:, :self.sec_height]
             for i in range(1,num_sections):
                 image = cv2.hconcat([image, self.history[-i][:, self.sec_height*i:self.sec_height*(i+1)]])
-        image = self.add_text(image)
         return image
 
 
     def show(self):
+        """Shows current image.
+        """
         cv2.namedWindow(self.windowname, cv2.WND_PROP_FULLSCREEN)
     #    cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
         cv2.setWindowProperty(self.windowname, cv2.WND_PROP_FULLSCREEN,
@@ -94,6 +98,11 @@ class RollingShutter:
             if len(self.history) > self.num_sections:
                 self.history.pop(0)
                 img = self.replace_sections_iterative()
+                self.controller.show_text()
+                if self.controller.show_text_status:
+                    self.add_text(img)
+
+
                 cv2.imshow(self.windowname, img)
 
             key = cv2.waitKey(1)
@@ -101,14 +110,31 @@ class RollingShutter:
                 break
         cv2.destroyWindow(self.windowname)
 
-
-
     def add_text(self, image):
-        cv2.putText(image, "Direction: {}".format(self.textdirection), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, fontScale=.5, color=(255, 0, 0), thickness=1, lineType=cv2.LINE_AA)
-        cv2.putText(image, "Number of Slices: {}".format(self.num_sections), (50, 85), cv2.FONT_HERSHEY_SIMPLEX, fontScale=.5, color=(255, 0, 0), thickness=1, lineType=cv2.LINE_AA)
+        font_scale = .5
+        color = (255, 0, 0)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        thickness=1
+        line_type=cv2.LINE_AA
+        cv2.putText(image, "Direction: {}".format(self.textdirection), (50, 50), font, fontScale=font_scale, color=color, thickness=thickness, lineType=line_type)
+        cv2.putText(image, "Number of Slices: {}".format(self.num_sections), (50, 75), font, fontScale=font_scale, color=color, thickness=thickness, lineType=line_type)
         return image
 
+class Controller:
+    def __init__(self):
+        self.show_text_status = False
 
+    def show_text(self):
+        """Controls if credential text is visible or not.
+        If MODE == 'desktop':
+            Make text visible by pressing 't'
+            Clear text by pressing 't' another time
+        """
+        if MODE == "desktop":
+            keypressed = cv2.waitKey(33)
+            if keypressed == ord('t'):
+                self.show_text_status = not(self.show_text_status)
+        #        print("t pressed")
 
 
 if __name__ == "__main__":
@@ -124,5 +150,6 @@ if __name__ == "__main__":
     elif "bt" in sys.argv:
         direction = "bt"
 
-    RS = RollingShutter(direction, 40)
+    Ctrl = Controller()
+    RS = RollingShutter(direction, 40, Ctrl)
     RS.show()
