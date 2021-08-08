@@ -79,7 +79,7 @@ class RollingShutter(Thread):
             rval = False
 
         self.get_sec_height(frame)
-        print(frame.shape)
+    #    print(frame.shape)
 
 
         while rval:
@@ -116,6 +116,9 @@ class RollingShutter(Thread):
 
 
     def add_text(self, image):
+        """Add Text with credentials to current image.
+        @param image: current image (numpy array)
+        """
         font_scale = .5
         color = (255, 0, 0)
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -141,6 +144,8 @@ class Controller(Thread):
         raise NotImplementedError()
 
     def show_text(self):
+        """Changes show text status.
+        """
         self.show_text_status = not(self.show_text_status)
 
 
@@ -171,6 +176,7 @@ class DesktopController(Controller):
         super().__init__(direction, num_sec)
 
     def detect_event(self):
+        """Detects Key events."""
         keypressed = cv2.waitKey(33)
         if keypressed == ord('t'):
             self.show_text()
@@ -210,7 +216,8 @@ class ControllerController(Controller):
         self.r_trig = 311
 
     def detect_event(self):
-
+        """Detects key events from controller.
+        """
         for event in self.controller.read_loop():
             if event.type == ecodes.EV_KEY:
                 if event.value == 1:
@@ -218,10 +225,10 @@ class ControllerController(Controller):
                         print("Y")
                     elif event.code == self.b_butt:
                         if self.edit_mode == "num_sections":
-                            self.edit_mode = None
+                        #    self.edit_mode = None
+                            pass
                         else:
                             self.edit_mode = "num_sections"
-
 
                     elif event.code == self.a_butt:
                         self.edit_mode = "direction"
@@ -239,6 +246,9 @@ class ControllerController(Controller):
                     elif event.code == self.r_trig:
                         print("right bumper")
 
+                elif event.value == -1:
+                    if event.code == self.b_butt:
+                        self.edit_mode = None
             elif event.type == ecodes.EV_ABS:
                 if event.value == -1:
                     if event.code == self.up:
