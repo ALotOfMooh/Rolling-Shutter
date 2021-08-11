@@ -13,6 +13,7 @@ from threading import Thread
 #MODE = "desktop"
 MODE = "controller"
 direction = "tb"
+device = '/dev/input/event7'
 
 if MODE == "controller":
     #import evdev
@@ -32,17 +33,25 @@ class RollingShutter(Thread):
         self.windowname = windowname
 
 
+        # width = self.vc.get(cv2.CAP_PROP_FRAME_WIDTH)
+        # height = self.vc.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        # print(width, height)
+        cv2.namedWindow(self.windowname,cv2.WINDOW_FREERATIO)
+
+    #    cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
+        cv2.setWindowProperty(self.windowname, cv2.WND_PROP_FULLSCREEN,
+                             cv2.WINDOW_FULLSCREEN)
 
 
     def replace_sections_iterative(self):
-        """Iterative (slow) algorithm that fills the resulting image from the history.
+        """Iterative (slow) algorithm that fills the resulting image from history.
         """
-        if self.controller.direction_status == "tb":
+        if self.controller.direction_status == "bt":
             image = self.history[0][:self.sec_height]
             for i in range(1, self.controller.num_sections):
                 image = cv2.vconcat([image, self.history[i][self.sec_height*i:self.sec_height*(i+1)]])
-        elif self.controller.direction_status == "bt":
-            image = self.history[0][:self.sec_height]
+        elif self.controller.direction_status == "tb":
+            image = self.history[-1][:self.sec_height]
             for i in range(1, self.controller.num_sections):
                 image = cv2.vconcat([image, self.history[-i][self.sec_height*i:self.sec_height*(i+1)]])
         elif self.controller.direction_status == "lr":
@@ -50,7 +59,7 @@ class RollingShutter(Thread):
             for i in range(1, self.controller.num_sections):
                 image = cv2.hconcat([image, self.history[i][:, self.sec_height*i:self.sec_height*(i+1)]])
         elif self.controller.direction_status == "rl":
-            image = self.history[0][:, :self.sec_height]
+            image = self.history[-1][:, :self.sec_height]
             for i in range(1, self.controller.num_sections):
                 image = cv2.hconcat([image, self.history[-i][:, self.sec_height*i:self.sec_height*(i+1)]])
         return image
@@ -59,10 +68,7 @@ class RollingShutter(Thread):
     def show(self):
         """Shows current image.
         """
-        cv2.namedWindow(self.windowname, cv2.WINDOW_FREERATIO)
-    #    cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
-        cv2.setWindowProperty(self.windowname, cv2.WND_PROP_FULLSCREEN,
-                              cv2.WINDOW_FULLSCREEN)
+
         # cv2.namedWindow("preview", cv2.WINDOW_NORMAL)
         # cv2.setWindowProperty("preview", cv2.CV_WND_PROP_FULLSCREEN, 1)
         #cv2.namedWindow("preview", cv2.WINDOW_NORMAL);
@@ -81,9 +87,9 @@ class RollingShutter(Thread):
         self.get_sec_height(frame)
     #    print(frame.shape)
 
-
         while rval:
-            time.sleep(.1)
+            s = time.time()
+        #    time.sleep(.1)
             if self.controller.edit_mode == "direction_set":
                 self.get_sec_height(frame)
                 self.controller.edit_mode = None
@@ -106,6 +112,7 @@ class RollingShutter(Thread):
             key = cv2.waitKey(1)
             if key == 27: # exit on ESC
                 break
+            # print(time.time() - s)
         cv2.destroyWindow(self.windowname)
 
     def get_sec_height(self, frame):
@@ -132,12 +139,12 @@ class Controller(Thread):
     def __init__(self, direction, section_num):
 
         super().__init__(name="controller", target=self.detect_event)
-        self.show_text_status = False
+        self.show_text_status = True
         self.direction_status = direction
         self.textdirection = None
         self.set_direction(direction)
-
         self.num_sections = section_num
+
         self.edit_mode = None
 
     def detect_event(self):
@@ -195,25 +202,26 @@ class ControllerController(Controller):
     def __init__(self, direction, num_sec):
         super().__init__(direction, num_sec)
 
-        self.controller = InputDevice('/dev/input/event3')
+        self.controller = InputDevice(device)
+        print(self.controller)
 
         # Mapping of controller buttons
-        self.a_butt = 304
-        self.b_butt = 305
-        self.x_butt = 307
-        self.y_butt = 308
+        self.a_butt = 288 #304
+        self.b_butt = 289#305
+        self.x_butt = 290#307
+        self.y_butt = 291#308
 
-        self.up = 17
-        self.down = 17
+        self.up = 1#17
+        self.down = 1#17
 
-        self.left = 16
-        self.right = 16
+        self.left = 0#16
+        self.right = 0#16
 
-        self.start_butt = 315
-        self.select_butt = 314
+        self.start_butt = 297#315
+        self.select_butt = 296#314
 
-        self.l_trig = 310
-        self.r_trig = 311
+        self.l_trig = 292#310
+        self.r_trig = 293#311
 
     def detect_event(self):
         """Detects key events from controller.
@@ -224,14 +232,10 @@ class ControllerController(Controller):
                     if event.code == self.y_butt:
                         print("Y")
                     elif event.code == self.b_butt:
-                        if self.edit_mode == "num_sections":
-                        #    self.edit_mode = None
-                            pass
-                        else:
-                            self.edit_mode = "num_sections"
+                        self.set_num_sections(self.num_sections - 1)
 
                     elif event.code == self.a_butt:
-                        self.edit_mode = "direction"
+                        self.set_num_sections(self.num_sections + 1)
 
                     elif event.code == self.x_butt:
                         print("X")
@@ -246,37 +250,29 @@ class ControllerController(Controller):
                     elif event.code == self.r_trig:
                         print("right bumper")
 
-                elif event.value == -1:
-                    if event.code == self.b_butt:
-                        self.edit_mode = None
+                # elif event.value == -1:
+                #     if event.code == self.b_butt:
+                #         self.edit_mode = None
             elif event.type == ecodes.EV_ABS:
-                if event.value == -1:
+                if event.value == 0 and event.type == 3:
+                    print("jup")
                     if event.code == self.up:
-                        if self.edit_mode == "direction":
-                            self.set_direction("bt")
-                        elif self.edit_mode == "num_sections":
-                            self.set_num_sections(self.num_sections + 1)
+                        print("jup2")
+                        self.set_direction("bt")
+
 
                     elif event.code == self.left:
-                        if self.edit_mode == "direction":
-                            self.set_direction("rl")
-                        elif self.edit_mode == "num_sections":
-                            self.set_num_sections(self.num_sections - 1)
-                elif event.value == 1:
+                        self.set_direction("rl")
+                elif event.value == 255:
                     # elif event.code == self.up:
                     #     print("up")
                     if event.code == self.down:
-                        if self.edit_mode == "direction":
-                            self.set_direction("tb")
-                        elif self.edit_mode == "num_sections":
-                            self.set_num_sections(self.num_sections - 1)
+                        self.set_direction("tb")
                     # elif event.code == self.left:
                     #     print("left")
                     elif event.code == self.right:
-                        if self.edit_mode == "direction":
-                            self.set_direction("lr")
-                        elif self.edit_mode == "num_sections":
-                            self.set_num_sections(self.num_sections + 1)
+                        self.set_direction("lr")
+
 
 
 
