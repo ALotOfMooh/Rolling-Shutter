@@ -9,11 +9,14 @@ import numpy as np
 
 from threading import Thread
 
+import autoplay
+
+
 
 #MODE = "desktop"
 MODE = "controller"
 direction = "tb"
-device = '/dev/input/event7'
+device = '/dev/input/' + autoplay.eventstr
 
 if MODE == "controller":
     #import evdev
@@ -68,16 +71,6 @@ class RollingShutter(Thread):
     def show(self):
         """Shows current image.
         """
-
-        # cv2.namedWindow("preview", cv2.WINDOW_NORMAL)
-        # cv2.setWindowProperty("preview", cv2.CV_WND_PROP_FULLSCREEN, 1)
-        #cv2.namedWindow("preview", cv2.WINDOW_NORMAL);
-
-        #cv2.namedWindow("preview", cv2.WINDOW_FREERATIO)
-        #cv2.namedWindow("preview", cv2.WINDOW_FULLSCREEN );
-        #cv2.setWindowProperty("preview",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
-        #   cv2.setWindowProperty("preview", cv2.WND_PROP_FULLSCREEN, cv2.CV_WINDOW_FULLSCREEN)
-
         if self.vc.isOpened(): # try to get the first frame
             rval, frame = self.vc.read()
             self.history.append(frame)
@@ -95,6 +88,8 @@ class RollingShutter(Thread):
                 self.controller.edit_mode = None
 
             elif self.controller.edit_mode == "num_sections_set":
+                while len(self.history) > self.controller.num_sections:
+                    self.history.pop()
                 self.get_sec_height(frame)
 
             rval, frame = self.vc.read()
@@ -106,8 +101,8 @@ class RollingShutter(Thread):
                 if self.controller.show_text_status:
                     self.add_text(img)
 
-
-                cv2.imshow(self.windowname, img)
+`           #    flipHorizontal = cv2.flip(originalImage, 1)`
+                cv2.imshow(self.windowname, cv2.flip(img, 1))
 
             key = cv2.waitKey(1)
             if key == 27: # exit on ESC
@@ -116,6 +111,8 @@ class RollingShutter(Thread):
         cv2.destroyWindow(self.windowname)
 
     def get_sec_height(self, frame):
+        """Calculates section height (pixel rows/columns per secion)
+        @param frame: current frame (numpy arrays)"""
         if self.controller.direction_status in ("tb", "bt"):
             self.sec_height = frame.shape[0] // self.controller.num_sections
         elif self.controller.direction_status in ("lr", "rl"):
@@ -203,7 +200,7 @@ class ControllerController(Controller):
         super().__init__(direction, num_sec)
 
         self.controller = InputDevice(device)
-        print(self.controller)
+    #    print(self.controller)
 
         # Mapping of controller buttons
         self.a_butt = 288 #304
@@ -255,69 +252,25 @@ class ControllerController(Controller):
                 #         self.edit_mode = None
             elif event.type == ecodes.EV_ABS:
                 if event.value == 0 and event.type == 3:
-                    print("jup")
+                #    print("jup")
                     if event.code == self.up:
-                        print("jup2")
+                #        print("jup2")
                         self.set_direction("bt")
 
 
                     elif event.code == self.left:
                         self.set_direction("rl")
                 elif event.value == 255:
-                    # elif event.code == self.up:
-                    #     print("up")
                     if event.code == self.down:
                         self.set_direction("tb")
-                    # elif event.code == self.left:
-                    #     print("left")
                     elif event.code == self.right:
                         self.set_direction("lr")
 
 
-
-
-
-    #
-    # def test_controller(self):
-    #     #prints out device info at start
-    #     print(self.controller)
-    #     time.sleep(1)
-    #     #loop and filter by event code and print the mapped label
-    #     for event in self.controller.read_loop():
-    #         if event.type == ecodes.EV_KEY:
-    #             if event.value == 1:
-    #                 if event.code == self.y_butt:
-    #                     print("Y")
-    #                 elif event.code == self.b_butt:
-    #                     print("B")
-    #                 elif event.code == self.a_butt:
-    #                     print("A")
-    #                 elif event.code == self.x_butt:
-    #                     print("X")
-    #
-    #                 elif event.code == self.up:
-    #                     print("up")
-    #                 elif event.code == self.down:
-    #                     print("down")
-    #                 elif event.code == self.left:
-    #                     print("left")
-    #                 elif event.code == self.right:
-    #                     print("right")
-    #
-    #                 elif event.code == self.start:
-    #                     print("start")
-    #                 elif event.code == self.select:
-    #                     print("select")
-    #
-    #                 elif event.code == self.l_trig:
-    #                     print("left bumper")
-    #                 elif event.code == self.r_trig:
-    #                     print("right bumper")
-
-
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        MODE = sys.argv[1]
+        if 'event' in sys.argv[1]:
+            device = '/dev/input/' + sys.argv[1]
     direction = "tb"
     if "lr" in sys.argv:
         direction = "lr"
