@@ -6,7 +6,8 @@ with open(file, 'r') as f:
     content = f.read()
 #print(content)
 
-startstr = "HDA Intel PCH Mic"
+# Find out camera device Name in "/proc/bus/input/devices"
+startstr = "UVC Camera" #"HDA Intel PCH Mic"
 startidx = content.find(startstr)
 cropstr = content[startidx:]
 endstr = "Bus"
