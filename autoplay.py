@@ -16,7 +16,7 @@ def find_devices(startstr):
     eventidx = cropstr.find("event")
     eventstr = cropstr[eventidx:eventidx+7]
     eventstr = eventstr.strip()
-    print(eventstr)
+    # print(eventstr)
     return '/dev/input/' + eventstr
 
 # Find out camera device Name in "/proc/bus/input/devices"
