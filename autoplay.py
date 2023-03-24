@@ -17,7 +17,7 @@ def find_devices(startstr):
     eventstr = cropstr[eventidx:eventidx+7]
     eventstr = eventstr.strip()
     print(eventstr)
-    return eventstr
+    return '/dev/input/' + eventstr
 
 # Find out camera device Name in "/proc/bus/input/devices"
 startstr = "UVC Camera" #"HDA Intel PCH Mic"
