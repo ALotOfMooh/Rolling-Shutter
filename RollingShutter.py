@@ -22,6 +22,7 @@ if MODE == "controller":
     #import evdev
     from evdev import InputDevice, categorize, ecodes
 
+
 class RollingShutter(Thread):
     def __init__(self, controller, windowname="rs"):
         super().__init__(name="rs", target=self.show)
@@ -219,14 +220,28 @@ class ControllerController(Controller):
         self.l_trig = 292#310
         self.r_trig = 293#311
 
+        self.stop_code = [self.start_butt for i in range(5)]
+        self.current_stop_event = 0
+        self.stop_event_detect = []
+        
+
     def detect_event(self):
         """Detects key events from controller.
         """
         for event in self.controller.read_loop():
             if event.type == ecodes.EV_KEY:
                 if event.value == 1:
+                    if event.code == self.stop_code[self.current_stop_event]:
+                        self.current_stop_event += 1
+                        self.stop_event_detect.append(True)
+                        if len(self.stop_event_detect) == len(self.stop_code):
+                            sys.exit()
+                    else:
+                        self.current_stop_event = 0
+                        self.stop_event_detect = []
                     if event.code == self.y_butt:
-                        print("Y")
+                        # print("Y")
+                        pass
                     elif event.code == self.b_butt:
                         self.set_num_sections(self.num_sections - 1)
 
@@ -234,17 +249,21 @@ class ControllerController(Controller):
                         self.set_num_sections(self.num_sections + 1)
 
                     elif event.code == self.x_butt:
-                        print("X")
+                        # print("X")
+                        pass
 
                     elif event.code == self.start_butt:
-                        print("start")
+                        pass
+                        # print("start")
                     elif event.code == self.select_butt:
                         self.show_text()
 
                     elif event.code == self.l_trig:
-                        print("left bumper")
+                        pass
+                        # print("left bumper")
                     elif event.code == self.r_trig:
-                        print("right bumper")
+                        pass
+                        # print("right bumper")
 
                 # elif event.value == -1:
                 #     if event.code == self.b_butt:
