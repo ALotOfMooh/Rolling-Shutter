@@ -100,8 +100,7 @@ class RollingShutter(Thread):
                 img = self.replace_sections_iterative()
                 if self.controller.show_text_status:
                     self.add_text(img)
-
-`           #    flipHorizontal = cv2.flip(originalImage, 1)`
+          #    flipHorizontal = cv2.flip(originalImage, 1)
                 cv2.imshow(self.windowname, cv2.flip(img, 1))
 
             key = cv2.waitKey(1)
