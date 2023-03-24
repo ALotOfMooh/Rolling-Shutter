@@ -231,14 +231,14 @@ class ControllerController(Controller):
         for event in self.controller.read_loop():
             if event.type == ecodes.EV_KEY:
                 if event.value == 1:
-                    if event.code == self.stop_code[self.current_stop_event]:
-                        self.current_stop_event += 1
-                        self.stop_event_detect.append(True)
-                        if len(self.stop_event_detect) == len(self.stop_code):
-                            sys.exit()
-                    else:
-                        self.current_stop_event = 0
-                        self.stop_event_detect = []
+                    # if event.code == self.stop_code[self.current_stop_event]:
+                    #     self.current_stop_event += 1
+                    #     self.stop_event_detect.append(True)
+                    #     if len(self.stop_event_detect) == len(self.stop_code):
+                    #         sys.exit()
+                    # else:
+                    #     self.current_stop_event = 0
+                    #     self.stop_event_detect = []
                     if event.code == self.y_butt:
                         # print("Y")
                         pass
