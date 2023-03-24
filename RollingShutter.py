@@ -5,7 +5,7 @@
 import time
 import sys
 import cv2
-import numpy as np
+# import numpy as np
 
 from threading import Thread
 
@@ -16,7 +16,7 @@ import autoplay
 #MODE = "desktop"
 MODE = "controller"
 direction = "tb"
-device = '/dev/input/' + autoplay.eventstr
+device = '/dev/input/' + autoplay.camera_dev
 
 if MODE == "controller":
     #import evdev
@@ -270,6 +270,8 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         if 'event' in sys.argv[1]:
             device = '/dev/input/' + sys.argv[1]
+    else:
+        device = autoplay.gamepad_dev
     direction = "tb"
     if "lr" in sys.argv:
         direction = "lr"
