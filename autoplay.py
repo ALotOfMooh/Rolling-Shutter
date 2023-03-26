@@ -1,4 +1,5 @@
-
+"""Finds out which event the devices are assigned to by the OS. 
+(Changes at every boot.)"""
 def find_devices(startstr):
     dev_path = "/proc/bus/input/devices"
     with open(dev_path, 'r') as f:
